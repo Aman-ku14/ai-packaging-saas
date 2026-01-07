@@ -30,6 +30,9 @@ export default function Home() {
     });
   };
 
+  // API Configuration
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
 
@@ -44,13 +47,13 @@ export default function Home() {
       const uploadData = new FormData();
       uploadData.append("file", file);
 
-      const res = await fetch("https://ai-packaging-backend.onrender.com/api/v1/upload-image", {
+      const res = await fetch(`${API_BASE}/api/v1/upload-image`, {
         method: "POST",
         body: uploadData,
       });
 
       if (!res.ok) {
-        throw new Error("Image upload failed");
+        throw new Error("Backend not reachable. Please try again later.");
       }
 
       // ✅ THIS WAS MISSING
@@ -73,7 +76,7 @@ export default function Home() {
       }
 
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to upload image";
+      const message = err instanceof Error ? err.message : "Backend not reachable. Please try again later.";
       setError(message);
       console.error("Upload error:", err);
     } finally {
@@ -93,7 +96,7 @@ export default function Home() {
 
     try {
       // 1. Get Recommendation Data (JSON)
-      const res = await fetch("https://ai-packaging-backend.onrender.com/api/v1/recommend-packaging", {
+      const res = await fetch(`${API_BASE}/api/v1/recommend-packaging`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -108,7 +111,7 @@ export default function Home() {
         }),
       });
 
-      if (!res.ok) throw new Error("Recommendation failed");
+      if (!res.ok) throw new Error("Backend not reachable. Please try again later.");
 
       const data = await res.json();
       setRecommendation(data);
@@ -117,7 +120,7 @@ export default function Home() {
       setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setError("Backend not reachable. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -125,7 +128,7 @@ export default function Home() {
 
   const handleDownloadPDF = async () => {
     try {
-      const res = await fetch("https://ai-packaging-backend.onrender.com/api/v1/recommend-packaging-pdf", {
+      const res = await fetch(`${API_BASE}/api/v1/recommend-packaging-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Re-send same data to generate PDF
