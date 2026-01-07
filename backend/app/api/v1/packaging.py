@@ -32,7 +32,11 @@ def recommend(request: PackagingRequest):
             fragility_source = "user_override"
 
     # 3. Logic
-    packaging_result = recommend_packaging(**request.dict())
+    request_dict = request.dict()
+    request_dict.pop("ai_confidence", None)
+    request_dict.pop("ai_reasoning", None)
+    request_dict.pop("ai_suggested_fragility", None)
+    packaging_result = recommend_packaging(**request_dict)
     
     # 2. LOGGING (ML Data)
     try:
@@ -69,7 +73,11 @@ async def recommend_pdf(data: PackagingRequest):
             fragility_source = "user_override"
 
     # 2. Logic (Get Recommendation)
-    packaging_result = recommend_packaging(**data.dict())
+    data_dict = data.dict()
+    data_dict.pop("ai_confidence", None)
+    data_dict.pop("ai_reasoning", None)
+    data_dict.pop("ai_suggested_fragility", None)
+    packaging_result = recommend_packaging(**data_dict)
 
     # 3. LOGGING (ML Data)
     try:
