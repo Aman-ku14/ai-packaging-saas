@@ -6,13 +6,17 @@ from app.api.v1.packaging import router as packaging_router
 from app.api.v1.images import router as images_router
 
 app = FastAPI(title="AI Packaging SaaS")
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],   # allow frontend to talk
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 
 
 app.include_router(health_router, prefix="/api/v1")
