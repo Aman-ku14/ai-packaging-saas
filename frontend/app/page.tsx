@@ -31,7 +31,28 @@ export default function Home() {
   };
 
   // API Configuration
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
+  // Retry Logic Helper
+  const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fetchWithRetry = async (url: string, options: RequestInit, setErrorState: (msg: string) => void) => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error("Backend not reachable");
+      return res;
+    } catch (err) {
+      setErrorState("Backend waking up (Render free tier). Retrying...");
+      await wait(5000); // Wait 5 seconds
+      try {
+        const retryRes = await fetch(url, options);
+        if (!retryRes.ok) throw new Error("Backend not reachable");
+        return retryRes;
+      } catch (retryErr) {
+        throw new Error("Backend not reachable. Please try again later.");
+      }
+    }
+  };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
@@ -47,14 +68,10 @@ export default function Home() {
       const uploadData = new FormData();
       uploadData.append("file", file);
 
-      const res = await fetch(`${API_BASE}/api/v1/upload-image`, {
+      const res = await fetchWithRetry(`${API_BASE}/api/v1/upload-image`, {
         method: "POST",
         body: uploadData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Backend not reachable. Please try again later.");
-      }
+      }, setError);
 
       // ✅ THIS WAS MISSING
       const data = await res.json();
@@ -96,7 +113,7 @@ export default function Home() {
 
     try {
       // 1. Get Recommendation Data (JSON)
-      const res = await fetch(`${API_BASE}/api/v1/recommend-packaging`, {
+      const res = await fetchWithRetry(`${API_BASE}/api/v1/recommend-packaging`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -109,9 +126,7 @@ export default function Home() {
           ai_reasoning: aiMetadata.reasoning,
           ai_suggested_fragility: (aiMetadata as any).suggested_level || null
         }),
-      });
-
-      if (!res.ok) throw new Error("Backend not reachable. Please try again later.");
+      }, setError);
 
       const data = await res.json();
       setRecommendation(data);
@@ -120,7 +135,7 @@ export default function Home() {
       setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
 
     } catch (err) {
-      setError("Backend not reachable. Please try again later.");
+      setError(err instanceof Error ? err.message : "Backend not reachable. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -128,7 +143,7 @@ export default function Home() {
 
   const handleDownloadPDF = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/recommend-packaging-pdf`, {
+      const res = await fetchWithRetry(`${API_BASE}/api/v1/recommend-packaging-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Re-send same data to generate PDF
@@ -142,9 +157,7 @@ export default function Home() {
           ai_reasoning: aiMetadata.reasoning,
           ai_suggested_fragility: (aiMetadata as any).suggested_level || null
         }),
-      });
-
-      if (!res.ok) throw new Error("PDF generation failed");
+      }, setError);
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -158,6 +171,7 @@ export default function Home() {
       setError("Failed to download PDF");
     }
   };
+
 
   const handleReset = () => {
     setFormData({
