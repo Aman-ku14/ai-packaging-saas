@@ -140,12 +140,12 @@ export default function Home() {
 
     // 🔴 VALIDATION — prevents 422 error
     if (
-      !formData.product_length_mm ||
-      !formData.product_width_mm ||
-      !formData.product_height_mm ||
-      !formData.product_weight_kg
+      !formData.product_length_mm || isNaN(Number(formData.product_length_mm)) ||
+      !formData.product_width_mm || isNaN(Number(formData.product_width_mm)) ||
+      !formData.product_height_mm || isNaN(Number(formData.product_height_mm)) ||
+      !formData.product_weight_kg || isNaN(Number(formData.product_weight_kg))
     ) {
-      setError("Please fill all dimensions and weight.");
+      setError("Please enter valid numbers for dimensions and weight.");
       setLoading(false);
       return;
     }
@@ -156,17 +156,17 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product_length_mm: parseFloat(formData.product_length_mm),
-          product_width_mm: parseFloat(formData.product_width_mm),
-          product_height_mm: parseFloat(formData.product_height_mm),
-          product_weight_kg: parseFloat(formData.product_weight_kg),
+          product_length_mm: Number(formData.product_length_mm),
+          product_width_mm: Number(formData.product_width_mm),
+          product_height_mm: Number(formData.product_height_mm),
+          product_weight_kg: Number(formData.product_weight_kg),
 
           fragility_level: formData.fragility_level.toLowerCase(),
           product_category: formData.product_category,
 
           ai_confidence: aiMetadata?.confidence ?? 0,
           ai_reasoning: aiMetadata?.reasoning ?? "",
-          ai_suggested_fragility: aiMetadata?.suggested_level ?? null
+          ai_suggested_fragility: aiMetadata?.suggested_level || ""
         }),
 
       }, setError);
@@ -195,13 +195,14 @@ export default function Home() {
           product_width_mm: Number(formData.product_width_mm),
           product_height_mm: Number(formData.product_height_mm),
           product_weight_kg: Number(formData.product_weight_kg),
-          fragility_level: formData.fragility_level,
+          fragility_level: formData.fragility_level.toLowerCase(),
           product_category: formData.product_category,
-          ai_confidence: aiMetadata.confidence,
-          ai_reasoning: aiMetadata.reasoning,
-          ai_suggested_fragility: aiMetadata.suggested_level || ""
+          ai_confidence: aiMetadata?.confidence ?? 0,
+          ai_reasoning: aiMetadata?.reasoning ?? "",
+          ai_suggested_fragility: aiMetadata?.suggested_level || ""
         }),
       }, setError);
+
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
