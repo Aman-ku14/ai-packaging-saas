@@ -144,11 +144,12 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
           product_length_mm: Number(formData.product_length_mm),
           product_width_mm: Number(formData.product_width_mm),
           product_height_mm: Number(formData.product_height_mm),
           product_weight_kg: Number(formData.product_weight_kg),
+          fragility_level: formData.fragility_level,
+          product_category: formData.product_category,
           ai_confidence: aiMetadata.confidence,
           ai_reasoning: aiMetadata.reasoning,
           ai_suggested_fragility: aiMetadata.suggested_level || ""
@@ -175,11 +176,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         // Re-send same data to generate PDF
         body: JSON.stringify({
-          ...formData,
           product_length_mm: Number(formData.product_length_mm),
           product_width_mm: Number(formData.product_width_mm),
           product_height_mm: Number(formData.product_height_mm),
           product_weight_kg: Number(formData.product_weight_kg),
+          fragility_level: formData.fragility_level,
+          product_category: formData.product_category,
           ai_confidence: aiMetadata.confidence,
           ai_reasoning: aiMetadata.reasoning,
           ai_suggested_fragility: aiMetadata.suggested_level || ""
@@ -321,7 +323,7 @@ export default function Home() {
           {aiMetadata.confidence > 0 && (
             <div style={{
               ...styles.aiCard,
-              borderColor: formData.fragility_level !== (aiMetadata as any).suggested_level ? '#ff9800' : '#333'
+              borderColor: formData.fragility_level !== aiMetadata.suggested_level ? '#ff9800' : '#333'
             }}>
               <div style={styles.aiHeader}>
                 <span style={styles.aiTitle}>🤖 AI Analysis</span>
@@ -330,7 +332,7 @@ export default function Home() {
                 </span>
               </div>
               <p style={styles.aiReason}>{aiMetadata.reasoning}</p>
-              {formData.fragility_level !== (aiMetadata as any).suggested_level && (
+              {formData.fragility_level !== aiMetadata.suggested_level && (
                 <p style={styles.aiOverride}>
                   ⚠️ You have overridden the AI suggestion.
                 </p>
