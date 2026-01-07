@@ -39,14 +39,41 @@ export default function Home() {
   const fetchWithRetry = async (url: string, options: RequestInit, setErrorState: (msg: string) => void) => {
     try {
       const res = await fetch(url, options);
-      if (!res.ok) throw new Error("Backend not reachable");
+      if (!res.ok) {
+        // Try to parse partial error details
+        try {
+          const errData = await res.json();
+          if (errData.detail) {
+            // If it's a validation error list
+            if (Array.isArray(errData.detail)) {
+              throw new Error(`Validation Error: ${errData.detail[0].msg} (${errData.detail[0].loc.join('.')})`);
+            }
+            throw new Error(errData.detail);
+          }
+        } catch (e) {
+          // ignore parsing error if it's not JSON
+        }
+        throw new Error("Backend request failed");
+      }
       return res;
-    } catch (err) {
+    } catch (err: any) {
+      // If it is a validation error, don't retry, just fail immediately
+      if (err.message && err.message.includes("Validation Error")) {
+        throw err;
+      }
+
       setErrorState("Backend waking up (Render free tier). Retrying...");
       await wait(5000); // Wait 5 seconds
       try {
         const retryRes = await fetch(url, options);
-        if (!retryRes.ok) throw new Error("Backend not reachable");
+        if (!retryRes.ok) {
+          // Try to parse partial error details on retry too
+          try {
+            const errData = await retryRes.json();
+            if (errData.detail) throw new Error(JSON.stringify(errData.detail));
+          } catch (e) { }
+          throw new Error("Backend not reachable");
+        }
         return retryRes;
       } catch (retryErr) {
         throw new Error("Backend not reachable. Please try again later.");
@@ -124,7 +151,7 @@ export default function Home() {
           product_weight_kg: Number(formData.product_weight_kg),
           ai_confidence: aiMetadata.confidence,
           ai_reasoning: aiMetadata.reasoning,
-          ai_suggested_fragility: (aiMetadata as any).suggested_level || null
+          ai_suggested_fragility: aiMetadata.suggested_level || ""
         }),
       }, setError);
 
@@ -155,7 +182,7 @@ export default function Home() {
           product_weight_kg: Number(formData.product_weight_kg),
           ai_confidence: aiMetadata.confidence,
           ai_reasoning: aiMetadata.reasoning,
-          ai_suggested_fragility: (aiMetadata as any).suggested_level || null
+          ai_suggested_fragility: aiMetadata.suggested_level || ""
         }),
       }, setError);
 
