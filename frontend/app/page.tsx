@@ -58,7 +58,9 @@ export default function Home() {
 
         // 🛑 DO NOT RETRY FOR CLIENT ERRORS (4xx)
         if (res.status >= 400 && res.status < 500) {
-          throw new Error(errorMessage);
+          const error = new Error(errorMessage);
+          (error as any).noRetry = true;
+          throw error;
         }
 
         throw new Error(errorMessage);
@@ -66,7 +68,12 @@ export default function Home() {
       return res;
 
     } catch (err: any) {
-      // Re-throw if it's already a handled error or validation error
+      // Re-throw if it's explicitly marked as noRetry
+      if (err.noRetry) {
+        throw err;
+      }
+
+      // Also re-throw if it looks like a validation error (legacy check)
       if (err.message && (err.message.startsWith("Validation Error") || err.message.startsWith("Error"))) {
         throw err;
       }
