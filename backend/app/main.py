@@ -8,13 +8,19 @@ from app.api.v1.images import router as images_router
 app = FastAPI(title="AI Packaging SaaS")
 from fastapi.middleware.cors import CORSMiddleware
 
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # allow frontend to talk
+    allow_origins=[
+        "http://localhost:3000",
+        "https://ai-packaging-saas-fxlp-m8qyga54p-amans-projects-2ea77018.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 
