@@ -138,22 +138,37 @@ export default function Home() {
     setLoading(true);
     setError("");
 
+    // 🔴 VALIDATION — prevents 422 error
+    if (
+      !formData.product_length_mm ||
+      !formData.product_width_mm ||
+      !formData.product_height_mm ||
+      !formData.product_weight_kg
+    ) {
+      setError("Please fill all dimensions and weight.");
+      setLoading(false);
+      return;
+    }
+
     try {
       // 1. Get Recommendation Data (JSON)
       const res = await fetchWithRetry(`${API_BASE}/api/v1/recommend-packaging`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product_length_mm: Number(formData.product_length_mm),
-          product_width_mm: Number(formData.product_width_mm),
-          product_height_mm: Number(formData.product_height_mm),
-          product_weight_kg: Number(formData.product_weight_kg),
-          fragility_level: formData.fragility_level,
+          product_length_mm: parseFloat(formData.product_length_mm),
+          product_width_mm: parseFloat(formData.product_width_mm),
+          product_height_mm: parseFloat(formData.product_height_mm),
+          product_weight_kg: parseFloat(formData.product_weight_kg),
+
+          fragility_level: formData.fragility_level.toLowerCase(),
           product_category: formData.product_category,
-          ai_confidence: aiMetadata.confidence,
-          ai_reasoning: aiMetadata.reasoning,
-          ai_suggested_fragility: aiMetadata.suggested_level || ""
+
+          ai_confidence: aiMetadata?.confidence ?? 0,
+          ai_reasoning: aiMetadata?.reasoning ?? "",
+          ai_suggested_fragility: aiMetadata?.suggested_level ?? null
         }),
+
       }, setError);
 
       const data = await res.json();
