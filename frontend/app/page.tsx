@@ -44,7 +44,7 @@ export default function Home() {
       const uploadData = new FormData();
       uploadData.append("file", file);
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/upload-image", {
+      const res = await fetch("https://ai-packaging-backend.onrender.com/api/v1/upload-image", {
         method: "POST",
         body: uploadData,
       });
@@ -93,7 +93,7 @@ export default function Home() {
 
     try {
       // 1. Get Recommendation Data (JSON)
-      const res = await fetch("http://127.0.0.1:8000/api/v1/recommend-packaging", {
+      const res = await fetch("https://ai-packaging-backend.onrender.com/api/v1/recommend-packaging", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -125,7 +125,7 @@ export default function Home() {
 
   const handleDownloadPDF = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/recommend-packaging-pdf", {
+      const res = await fetch("https://ai-packaging-backend.onrender.com/api/v1/recommend-packaging-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Re-send same data to generate PDF
