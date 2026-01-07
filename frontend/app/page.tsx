@@ -39,26 +39,35 @@ export default function Home() {
   const fetchWithRetry = async (url: string, options: RequestInit, setErrorState: (msg: string) => void) => {
     try {
       const res = await fetch(url, options);
+
       if (!res.ok) {
-        // Try to parse partial error details
+        // 🔥 CRITICAL: Extract error details
+        let errorMessage = "Backend request failed";
         try {
           const errData = await res.json();
           if (errData.detail) {
-            // If it's a validation error list
             if (Array.isArray(errData.detail)) {
-              throw new Error(`Validation Error: ${errData.detail[0].msg} (${errData.detail[0].loc.join('.')})`);
+              errorMessage = `Validation Error: ${errData.detail[0].msg} (${errData.detail[0].loc.join('.')})`;
+            } else {
+              errorMessage = `Error: ${errData.detail}`;
             }
-            throw new Error(errData.detail);
           }
         } catch (e) {
-          // ignore parsing error if it's not JSON
+          errorMessage = `Error ${res.status}: ${res.statusText}`;
         }
-        throw new Error("Backend request failed");
+
+        // 🛑 DO NOT RETRY FOR CLIENT ERRORS (4xx)
+        if (res.status >= 400 && res.status < 500) {
+          throw new Error(errorMessage);
+        }
+
+        throw new Error(errorMessage);
       }
       return res;
+
     } catch (err: any) {
-      // If it is a validation error, don't retry, just fail immediately
-      if (err.message && err.message.includes("Validation Error")) {
+      // Re-throw if it's already a handled error or validation error
+      if (err.message && (err.message.startsWith("Validation Error") || err.message.startsWith("Error"))) {
         throw err;
       }
 
@@ -67,12 +76,12 @@ export default function Home() {
       try {
         const retryRes = await fetch(url, options);
         if (!retryRes.ok) {
-          // Try to parse partial error details on retry too
+          let errorMessage = "Backend not reachable";
           try {
             const errData = await retryRes.json();
-            if (errData.detail) throw new Error(JSON.stringify(errData.detail));
+            if (errData.detail) errorMessage = JSON.stringify(errData.detail);
           } catch (e) { }
-          throw new Error("Backend not reachable");
+          throw new Error(errorMessage);
         }
         return retryRes;
       } catch (retryErr) {
@@ -156,10 +165,11 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product_length_mm: Number(formData.product_length_mm),
-          product_width_mm: Number(formData.product_width_mm),
-          product_height_mm: Number(formData.product_height_mm),
-          product_weight_kg: Number(formData.product_weight_kg),
+          // 🔢 STRICT TYPE: Round to Int for dimensions
+          product_length_mm: Math.round(Number(formData.product_length_mm)),
+          product_width_mm: Math.round(Number(formData.product_width_mm)),
+          product_height_mm: Math.round(Number(formData.product_height_mm)),
+          product_weight_kg: Number(formData.product_weight_kg), // Float is fine
 
           fragility_level: formData.fragility_level.toLowerCase(),
           product_category: formData.product_category,
@@ -191,9 +201,9 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         // Re-send same data to generate PDF
         body: JSON.stringify({
-          product_length_mm: Number(formData.product_length_mm),
-          product_width_mm: Number(formData.product_width_mm),
-          product_height_mm: Number(formData.product_height_mm),
+          product_length_mm: Math.round(Number(formData.product_length_mm)),
+          product_width_mm: Math.round(Number(formData.product_width_mm)),
+          product_height_mm: Math.round(Number(formData.product_height_mm)),
           product_weight_kg: Number(formData.product_weight_kg),
           fragility_level: formData.fragility_level.toLowerCase(),
           product_category: formData.product_category,
